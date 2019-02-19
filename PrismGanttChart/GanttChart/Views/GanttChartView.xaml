@@ -1,0 +1,620 @@
+﻿<UserControl x:Class="GanttChart.Views.GanttChartView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:GanttChart.Views"
+             xmlns:prism="http://prismlibrary.com/"
+             prism:ViewModelLocator.AutoWireViewModel="True">
+    <DataGrid ItemsSource="{Binding Items}"
+              IsReadOnly="True"
+              CanUserReorderColumns="False" 
+              CanUserResizeColumns="False" 
+              CanUserSortColumns="False" 
+              CanUserResizeRows="False" 
+              Focusable="False" 
+              CanUserAddRows="False"
+              CanUserDeleteRows="False" 
+              GridLinesVisibility="All"
+              AutoGenerateColumns="False" 
+              FrozenColumnCount="2"
+              VerticalScrollBarVisibility="Visible"
+              HorizontalScrollBarVisibility="Hidden"
+              SelectionMode="Single"
+              SizeChanged="DataGrid_SizeChanged"
+              >
+
+        <DataGrid.CellStyle>
+            <Style TargetType="DataGridCell">
+                <!--行選択時のセルのスタイル（選択時も色変更させない）-->
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="AliceBlue" />
+                        <Setter Property="Foreground" Value="Black" />
+                        <Setter Property="BorderBrush" Value="White" />
+                    </Trigger>
+                    <Trigger Property="IsFocused" Value="True">
+                        <Setter Property="Background" Value="AliceBlue" />
+                        <Setter Property="Foreground" Value="Black" />
+                        <Setter Property="BorderBrush" Value="White" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </DataGrid.CellStyle>
+
+        <DataGrid.RowStyle>
+            <Style TargetType="DataGridRow">
+                <Setter Property="ToolTip">
+                    <Setter.Value>
+                        <TextBlock Text="{Binding Details}" />
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </DataGrid.RowStyle>
+
+        <DataGrid.Columns>
+
+            <!-- タイトル -->
+            <DataGridTemplateColumn Width="6*">
+                <DataGridTemplateColumn.Header>
+                    <CheckBox Content="折りたたみ" HorizontalContentAlignment="Center" IsChecked="{Binding Path=DataContext.IsExpand, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"/>
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Caption}" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Level}" Value="0">
+                                            <Setter Property="FontSize" Value="18"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="1">
+                                            <Setter Property="FontSize" Value="14"/>
+                                            <Setter Property="Margin" Value="18 0 0 0"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <DataGridTemplateColumn Width="100" Header="時間帯">
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding WorkTime}" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="14"/>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 1 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[0], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" FontWeight="Bold"/>
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[0]}" HorizontalAlignment="{Binding HAlignment[0]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[0]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 2 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[1], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" FontStyle="Oblique"/>
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[1]}" HorizontalAlignment="{Binding HAlignment[1]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[1]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 3 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[2], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[2]}" HorizontalAlignment="{Binding HAlignment[2]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[2]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 4 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[3], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[3]}" HorizontalAlignment="{Binding HAlignment[3]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[3]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 5 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[4], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[4]}" HorizontalAlignment="{Binding HAlignment[4]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[4]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 6 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[5], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[5]}" HorizontalAlignment="{Binding HAlignment[5]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[5]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 7 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[6], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[6]}" HorizontalAlignment="{Binding HAlignment[6]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[6]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 8 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[7], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[7]}" HorizontalAlignment="{Binding HAlignment[7]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[7]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 9 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[8], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[8]}" HorizontalAlignment="{Binding HAlignment[8]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[8]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 10 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[9], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[9]}" HorizontalAlignment="{Binding HAlignment[9]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[9]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 11 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[10], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[10]}" HorizontalAlignment="{Binding HAlignment[10]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[10]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 12 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[11], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[11]}" HorizontalAlignment="{Binding HAlignment[11]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[11]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 13 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[12], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[12]}" HorizontalAlignment="{Binding HAlignment[12]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[12]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 14 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[13], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[13]}" HorizontalAlignment="{Binding HAlignment[13]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[13]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 15 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[14], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[14]}" HorizontalAlignment="{Binding HAlignment[14]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[14]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 16 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[15], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[15]}" HorizontalAlignment="{Binding HAlignment[15]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[15]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 17 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[16], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[16]}" HorizontalAlignment="{Binding HAlignment[16]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[16]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 18 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[17], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[17]}" HorizontalAlignment="{Binding HAlignment[17]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[17]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 19 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[18], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[18]}" HorizontalAlignment="{Binding HAlignment[18]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[18]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 20 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[19], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[19]}" HorizontalAlignment="{Binding HAlignment[19]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[19]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 21 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[20], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="20" Width="{Binding TimeWidth[20]}" HorizontalAlignment="{Binding HAlignment[20]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[20]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 22 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[21], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="21" Width="{Binding TimeWidth[21]}" HorizontalAlignment="{Binding HAlignment[21]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[21]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 23 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[22], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="22" Width="{Binding TimeWidth[22]}" HorizontalAlignment="{Binding HAlignment[22]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[22]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- 24 -->
+            <DataGridTemplateColumn Width="1*">
+                <DataGridTemplateColumn.Header>
+                    <TextBlock Text="{Binding DataContext.Headers[23], RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type DataGrid}}}" />
+                </DataGridTemplateColumn.Header>
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                        <Border Margin="0, 5, 0, 5" Height="23" Width="{Binding TimeWidth[23]}" HorizontalAlignment="{Binding HAlignment[23]}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Times[23]}" Value="True">
+                                            <Setter Property="Background" Value="{Binding Color, Converter={v:BrushConverter}, Mode=OneWay}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+        </DataGrid.Columns>
+    </DataGrid>
+</UserControl>
